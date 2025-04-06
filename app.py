@@ -1,47 +1,56 @@
+
 import streamlit as st
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
+import numpy as np
+import pickle
 
-# Carrega os dados
-df = pd.read_csv('diabetes.csv')
+# Estilo de fundo
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background-color: #f5f5f5;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
-# Separa entrada e saída
-X = df.drop('Outcome', axis=1)
-y = df['Outcome']
+# Título
+st.markdown("<h1 style='text-align: center; color: #4CAF50;'>Verificador de Diabetes</h1>", unsafe_allow_html=True)
+st.markdown("### 🤖 Preencha os dados abaixo para descobrir a probabilidade de diabetes.")
 
-# Treina o modelo
-modelo = RandomForestClassifier()
-modelo.fit(X, y)
+# Carregar o modelo
+with open('modelo.pkl', 'rb') as file:
+    modelo = pickle.load(file)
 
-# Título do app
-st.title('🔬 Preditor de Diabetes')
-
-st.markdown('Insira os dados abaixo para saber se a pessoa tem chance de ter diabetes:')
-
-# Inputs do usuário
-col1, col2 = st.columns(2)
-
+# Inputs organizados
+col1, col2, col3 = st.columns(3)
 with col1:
-    pregnancies = st.number_input('Gravidez (Pregnancies)', 0, 20, 1)
-    glucose = st.number_input('Glicose (Glucose)', 0, 200, 100)
-    blood_pressure = st.number_input('Pressão arterial (BloodPressure)', 0, 140, 70)
-    skin_thickness = st.number_input('Espessura da pele (SkinThickness)', 0, 100, 20)
-
+    gravidez = st.number_input("Gravidez", 0, 20)
+    espessura = st.number_input("Espessura da pele", 0, 100)
 with col2:
-    insulin = st.number_input('Insulina (Insulin)', 0, 900, 80)
-    bmi = st.number_input('IMC (BMI)', 0.0, 70.0, 25.0)
-    dpf = st.number_input('DiabetesPedigreeFunction', 0.0, 3.0, 0.5)
-    age = st.number_input('Idade', 0, 120, 33)
+    glicose = st.number_input("Glicose", 0, 300)
+    insulina = st.number_input("Insulina", 0, 900)
+with col3:
+    pressao = st.number_input("Pressão Sanguínea", 0, 200)
+    imc = st.number_input("IMC", 0.0, 70.0, step=0.1)
 
-# Quando clicar em prever
-if st.button('🔍 Prever'):
-    entrada = pd.DataFrame([[pregnancies, glucose, blood_pressure, skin_thickness,
-                             insulin, bmi, dpf, age]],
-                           columns=X.columns)
+col4, col5 = st.columns(2)
+with col4:
+    pedigree = st.number_input("Função pedigree do diabetes", 0.000, 2.500, step=0.001, format="%.3f")
+with col5:
+    idade = st.number_input("Idade", 0, 120)
 
-    pred = modelo.predict(entrada)
+st.markdown("---")
 
-    if pred[0] == 1:
-        st.error('⚠️ Possível caso de diabetes.')
+# Botão de verificação
+if st.button("🔎 Verificar"):
+    dados = np.array([[gravidez, glicose, pressao, espessura, insulina, imc, pedigree, idade]])
+    resultado = modelo.predict(dados)
+
+    st.markdown("## Resultado:")
+    if resultado[0] == 1:
+        st.error("🚨 Alta probabilidade de diabetes!")
     else:
-        st.success('✅ Pouca chance de diabetes.')
+        st.success("✅ Baixa probabilidade de diabetes.")
